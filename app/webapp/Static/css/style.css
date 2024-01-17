@@ -1,0 +1,59 @@
+header img {
+    width: 200px;  /* Ancho deseado */
+    height: auto;  /* Altura automática para mantener la proporción */
+    float: right;
+}
+
+.top-section header {
+    border-bottom: 1px solid #ccc; /* Línea más gruesa en la parte inferior del encabezado */
+    margin-bottom: 20px;  /* Ajuste el margen inferior para agregar espacio */
+}
+
+/* Estilo adicional para el encabezado si es necesario */
+header h1 {
+    font-size: 3em;  /* Tamaño de fuente deseado */
+    margin-bottom: 5px;  /* Espacio inferior opcional para separar la imagen */
+    text-align: center;
+    margin-bottom: 80px;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    justify-content: center; /* Centra verticalmente el contenido del cuerpo */
+    align-items: center;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    align:center;
+}
+
+h1 {
+    color: #333;
+}
+
+p {
+    color: #555;
+}
+/* Estilo para el pie de página */
+.bottom-section {
+    border-top: 1px solid #ccc; /* Línea en la parte superior de la sección inferior */
+    padding: 20px;  /* Ajusta el espacio interno de la sección inferior */
+    width: 100%; /* Ajusta la anchura al 100% del ancho de la pantalla */
+    position: fixed;
+    bottom: 0;
+}
+
+/* Estilo adicional para la sección inferior si es necesario */
+footer {
+    text-align: center;
+    width: 80%; /* Ajusta la anchura al 80% del ancho de la pantalla (puedes ajustar este valor) */
+    margin: 0 auto; /* Centra el pie de página horizontalmente */
+}
