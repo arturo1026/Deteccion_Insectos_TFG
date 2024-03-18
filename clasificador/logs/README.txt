@@ -1,0 +1,1 @@
+en esta carpeta guardaremos los modelos tras el entrenamiento
