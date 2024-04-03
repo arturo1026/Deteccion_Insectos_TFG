@@ -1,7 +1,4 @@
-# # https://youtu.be/MF2AYo0SO6s
-"""
-Rename all files in a folder to numbers
-"""
+
 
 import os
 import glob

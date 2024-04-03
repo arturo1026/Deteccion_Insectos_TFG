@@ -12,10 +12,8 @@ from mrcnn.config import Config
 from mrcnn.model import MaskRCNN
 
 
-# import re
-
 # class that defines and loads the kangaroo dataset
-class FruitsDataset(Dataset):
+class InsectDataset(Dataset):
     # load the dataset definitions
     def load_dataset(self, dataset_dir, is_train=True):
         # define classes
