@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Página de Detección{% endblock %}
+
+{% block content %}
+<h1 class="titulo-subir-archivos">Identifica cuántos y cuáles insectos hay</h1>
+<form action="/deteccion" method="POST" enctype="multipart/form-data" target="_self">
+    <div class="upload-area" ondragover="dragOverHandler(event);" ondrop="dropHandler(event);">
+        <label for="fileInput">
+            <span id="file-prompt" class="file-prompt">Arrastra un archivo aquí o selecciona subiendo un archivo.</span>
+        </label>
+        <input type="file" id="fileInput" name="fileInput" accept="image/*" onchange="fileInputChangeHandler()">
+        <div class="image-preview-container"></div>
+    </div>
+    <br>
+    <select id="model-select" name="model-option" onchange="toggleModelUploadArea(event)">
+        <option value="default">Utilizar un modelo entrenado por defecto</option>
+        <option value="custom">Utilizar un modelo propio</option>
+    </select>
+    <br>
+    <div id="model-upload-area" class="upload-area" ondragover="modelDragOverHandler(event);" ondrop="modelDropHandler(event);">
+        <label for="modelInput" class="file-prompt">
+            <span id="model-prompt">Arrastra tu modelo aquí o selecciona subiendo un archivo.</span>
+        </label>
+        <input type="file" id="modelInput" name="modelInput" accept=".h5" onchange="modelFileInputChangeHandler()">
+        <div class="model-name-container"></div>
+    </div>
+    <br>
+    <button type="submit">Enviar</button>
+    <div class="result-container" style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h2>Resultado de la detección</h2>
+            <img src="{{ image_data }}" alt="Resultado de la detección">
+        </div>
+        <div>
+            <h3>Conteos de Detección:</h3>
+            <ul>
+                <li>Withe Fly (WF): {{ conteos[0] }}</li>
+                <li>Nesidicoris (NC): {{ conteos[1] }}</li>
+                <li>Macrolophis (MR): {{ conteos[2] }}</li>
+                <li>Total detectados: {{ conteos[3] }}</li>
+            </ul>
+        </div>
+    </div>
+</form>
+
+<script>
+    // Prevent default drag behaviors
+    function dragOverHandler(ev) {
+        ev.preventDefault(); // Prevent default drag and drop behavior of the browser
+        ev.currentTarget.classList.add('dragover'); // Añadir la clase 'dragover'
+    }
+
+    function dragLeaveHandler(ev) {
+        ev.currentTarget.classList.remove('dragover'); // Quitar la clase 'dragover'
+    }
+
+    // Toggle the model upload area based on selection
+    function toggleModelUploadArea(event) {
+        var selection = event.target.value;
+        var modelUploadAreas = document.querySelectorAll('.upload-area');
+        if (selection === 'custom') {
+            modelUploadAreas[1].style.display = 'flex'; // Mostrar el segundo .upload-area para modelos
+        } else {
+            modelUploadAreas[1].style.display = 'none'; // Ocultar el segundo .upload-area para modelos
+        }
+    }
+    
+    function updateProgress() {
+        fetch('/get_status')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // Verifica los datos recibidos
+            let progressBar = document.getElementById('progressBar');
+            let statusMessage = document.getElementById('statusMessage');
+            progressBar.style.width = data.progress + '%';
+            progressBar.setAttribute('aria-valuenow', data.progress);
+            statusMessage.innerText = data.status;
+            if (data.progress < 100) {
+                setTimeout(updateProgress, 1000); // Continúa haciendo polling si el progreso es menor a 100
+            }
+        }).catch(error => console.error('Error al actualizar el progreso:', error));
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        updateProgress(); // Inicia el polling al cargar el documento
+    });
+
+
+    // Handle file selection for images and model
+function fileInputChangeHandler() {
+    var fileInput = document.getElementById('fileInput');
+    var imagePreviewContainer = document.querySelector('.image-preview-container');
+    var filePrompt = document.getElementById('file-prompt');
+
+    if (fileInput.files && fileInput.files[0]) {
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            imagePreviewContainer.innerHTML = '';
+
+            // Botón de cierre 'X'
+            var closeButton = document.createElement('button');
+            closeButton.classList.add('close-btn');
+            closeButton.innerHTML = '&times;';
+            closeButton.onclick = function() {
+                imagePreviewContainer.innerHTML = '';
+                fileInput.value = '';
+                filePrompt.style.display = 'block'; // Vuelve a mostrar el mensaje inicial
+            };
+
+            // Posiciona el botón de cierre en la parte superior derecha de la imagen
+            closeButton.style.position = 'absolute';
+            closeButton.style.top = '0';
+            closeButton.style.right = '0';
+
+            // Etiqueta 'Imagen seleccionada:'
+            var selectedLabel = document.createElement('span');
+            selectedLabel.textContent = 'Imagen seleccionada:';
+            selectedLabel.classList.add('file-prompt'); // Reutiliza el estilo de .file-prompt
+
+            // Crear y mostrar la imagen
+            var image = new Image();
+            image.src = e.target.result;
+            image.alt = 'Vista previa de la imagen cargada';
+            image.style.maxWidth = '200px'; // Establece un ancho máximo para la imagen
+            image.style.maxHeight = '100px'; // Establece una altura máxima para la imagen
+            image.style.objectFit = 'contain';
+            
+            // Añade el texto y la imagen al contenedor
+            imagePreviewContainer.appendChild(selectedLabel);
+            imagePreviewContainer.appendChild(image);
+            imagePreviewContainer.appendChild(closeButton); // El botón de cierre se añade después para posicionarlo sobre la imagen
+
+            filePrompt.style.display = 'none'; // Oculta el mensaje de arrastrar archivo
+        };
+
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+}
+
+    // Event handler for dragging and dropping files
+    function dropHandler(ev) {
+        ev.preventDefault();
+        
+        var area = ev.currentTarget;
+        var input = area.querySelector('input[type="file"]');
+        var files = ev.dataTransfer.files;
+        
+        if (files.length > 0) {
+            var file = files[0];
+            input.files = files;
+            
+            // Call the change handler to update the image preview
+            fileInputChangeHandler({
+                target: input
+            });
+        }
+        
+        area.classList.remove('dragover'); // Remove 'dragover' class
+    }
+
+    // Set up click and drag events
+    window.onload = function() {
+        var filePrompts = document.querySelectorAll('.file-prompt');
+        filePrompts.forEach(function(prompt) {
+            prompt.addEventListener('click', function(event) {
+                event.stopPropagation(); // Prevent event bubbling
+                var input = prompt.previousElementSibling; // Asume que el input está justo antes del prompt
+                input.click();
+            });
+        });
+
+        // Set up the drag and drop handlers
+        var uploadAreas = document.querySelectorAll('.upload-area');
+        uploadAreas.forEach(function(area) {
+            area.addEventListener('dragover', dragOverHandler);
+            area.addEventListener('dragleave', dragLeaveHandler);
+            area.addEventListener('drop', dropHandler);
+        });
+    };
+    
+// Esta función maneja el evento 'dragover' específicamente para el área de subida de modelos
+function modelDragOverHandler(ev) {
+    ev.preventDefault();
+    ev.currentTarget.classList.add('dragover');
+}
+
+// Esta función maneja el evento 'drop' específicamente para el área de subida de modelos
+function modelDropHandler(ev) {
+    ev.preventDefault();
+    ev.currentTarget.classList.remove('dragover');
+
+    var input = document.getElementById('modelInput');
+    var files = ev.dataTransfer.files;
+
+    if (files.length > 0) {
+        input.files = files; // Coloca el archivo en el input
+        modelFileInputChangeHandler(); // Llama a la función que maneja el cambio de archivo
+    }
+}
+
+function modelFileInputChangeHandler() {
+    var input = document.getElementById('modelInput');
+    var modelLabel = input.parentElement.querySelector('label.file-prompt');
+    var modelNameContainer = document.querySelector('.model-name-container');
+
+    if (input.files && input.files[0]) {
+        var file = input.files[0];
+        modelNameContainer.innerHTML = ''; // Limpia el contenido anterior
+
+        // Crea el botón de cierre 'X' y lo coloca en la parte superior derecha
+        var closeButton = document.createElement('span');
+        closeButton.classList.add('close-btn');
+        closeButton.innerHTML = '&times;';
+        closeButton.style.position = 'absolute';
+        closeButton.style.top = '0';
+        closeButton.style.right = '0';
+        closeButton.onclick = function() {
+            input.value = ''; // Limpia el input
+            modelNameContainer.innerHTML = ''; // Limpia el contenedor
+            modelLabel.style.display = 'block'; // Muestra de nuevo el label original
+        };
+
+        // Agrega primero el botón de cierre para que aparezca a la derecha
+        modelNameContainer.appendChild(closeButton);
+
+        // Crea y configura la etiqueta 'Modelo seleccionado:'
+        var textSpan = document.createElement('span');
+        textSpan.textContent = 'Modelo seleccionado: ';
+        textSpan.classList.add('file-prompt');
+        
+        // Crea y configura el nombre del archivo subrayado
+        var fileNameSpan = document.createElement('span');
+        fileNameSpan.textContent = file.name;
+        fileNameSpan.classList.add('file-name'); // Clase para aplicar el subrayado
+
+        // Añade el nombre del archivo después del botón de cierre
+        modelNameContainer.appendChild(textSpan);
+        modelNameContainer.appendChild(fileNameSpan);
+
+        // Oculta el label de subida
+        modelLabel.style.display = 'none';
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializa el área de carga de modelos como oculta
+    var modelUploadArea = document.getElementById('model-upload-area');
+    modelUploadArea.style.display = 'none';
+
+    // Manejador para el cambio de opción en el select
+    document.getElementById('model-select').addEventListener('change', function(event) {
+        if (event.target.value === 'custom') {
+            modelUploadArea.style.display = 'flex'; // Cambia a 'flex' para mostrar el área
+        } else {
+            modelUploadArea.style.display = 'none'; // Oculta el área
+        }
+    });
+});
+
+</script>
+
+{% endblock %}
