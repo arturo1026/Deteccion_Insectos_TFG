@@ -1,12 +1,16 @@
+
 {% extends 'base.html' %}
 
 {% block title %}Página de Entrenamiento{% endblock %}
 
 {% block content %}
+<script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
 <div class="container">
     <h1 class="titulo-subir-archivos">Entrena tu propio modelo</h1>
     
-    <form method="post" action="{{ url_for('entrenamiento') }}">
+     <form id="trainingForm" method="post" action="{{ url_for('entrenamiento') }}">
     
         <div class="form-group">
           <label for="proporciones">Proporción de dataset:</label>
@@ -45,22 +49,27 @@
             <label for="steps">Especifica el número de steps:</label>
             <input type="number" id="steps" name="steps" min="1">
         </div>
-        
-        <button type="submit" class="btn btn-primary">Iniciar Entrenamiento</button>
+
+        <div class="form-group">
+            <label for="Name">Especifica el nombre del archivo:</label>
+            <input type="text" id="Name" name="Name" required>
+        </div>
+     
+    <button type="submit" class="btn btn-primary">Iniciar Entrenamiento</button>
+
     </form>
+        <div >
+        <h2>Estado del Entrenamiento</h2>
+        <p id="loading-info" class="hidden">Mostrando resultados...</p>
+        <p id="epoch-info" class="hidden">Esperando datos de época...</p>
+        <p id="batch-info" class="hidden">Esperando datos de batch...</p>
+    </div>
+    <div id="download-link-area"></div>
 </div>
 
-<script>
-function updateProporciones(value) {
-  document.getElementById('proporcionesValue').textContent = `Para entrenamiento: ${value}%`;
-  document.getElementById('testValue').textContent = `Para test (restante): ${100 - value}%`;
-}
 
-window.onload = function() {
-    // Esto asegurará que los valores se actualicen correctamente al cargar la página
-    updateProporciones(document.getElementById('proporciones').value);
-};
-</script>
+
+
 
 {% endblock %}
 

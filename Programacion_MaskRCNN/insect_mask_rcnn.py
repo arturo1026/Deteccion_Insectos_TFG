@@ -206,7 +206,7 @@ model.load_weights("weights/mask_rcnn_coco.h5", by_name=True, exclude=["mrcnn_cl
 # test_set corresponde con nuestro conjunto de datos definidos previamente
 model.train(train_set, test_set, learning_rate=config.LEARNING_RATE, epochs=20, layers='heads')
 # guardamos en el directorio logs los pesos del entrenamiento
-model_path = './logs/mask_rcnn_insects_cfg_24_04_2024.h5'
+model_path = './logs/mask_rcnn_insects_cfg_24_04_2025.h5'
 model.keras_model.save_weights(model_path)
 #########################################
 

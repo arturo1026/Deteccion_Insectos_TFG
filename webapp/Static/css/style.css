@@ -563,6 +563,12 @@ div.model-name-container > .close-btn {
     background: transparent; /* Maintain the transparent background on hover */
     color: #d33; /* Darken the color on hover for effect */
 }
+
+.hidden {
+    display: none;
+}
+
+
 <script>
 // Add 'dragover' class to upload area when dragging files over it
 function dragOverHandler(ev) {

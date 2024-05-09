@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for,session,jsonify
+from flask import Flask, render_template, request, redirect, url_for,session,jsonify,send_from_directory
 import os
 from werkzeug.utils import secure_filename 
 import skimage
@@ -19,14 +19,37 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from io import BytesIO
-tf.config.set_visible_devices([], 'GPU')
+import time 
+from flask_socketio import SocketIO, send
+from keras.callbacks import Callback
+from os import listdir
+import threading
+from entrenamiento import train_model
+from multiprocessing import Process
+from threading import Thread
+import subprocess
+import logging
+import re
 
+
+tf.config.set_visible_devices([], 'GPU')
+class IgnoreCUPTILogFilter(logging.Filter):
+    def filter(self, record):
+        # Aquí defines las condiciones para ignorar el mensaje
+        return "cupti_interface_->" not in record.msg and "Invalid GPU compute capability" not in record.msg
+
+# Configuración básica de TensorFlow para reducir la cantidad de mensajes de log
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+tf.get_logger().setLevel('ERROR')
+logger = logging.getLogger('tensorflow')
+logger.addFilter(IgnoreCUPTILogFilter())
 
 process_status = {}
 
 
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.secret_key = 'una_clave_secreta_very_secret'
 
@@ -155,23 +178,63 @@ def deteccion():
     return render_template('deteccion.html', image_data=pngImageB64String, conteos=conteos)
 
 
+#####################################################################################################################
+
+def start_training_thread(filename):
+    # Define el patrón de las expresiones regulares para capturar las líneas relevantes
+    epoch_pattern = re.compile(r"Epoch (\d+)/(\d+)")
+    batch_pattern = re.compile(r"(\d+)/(\d+)\s+\[.*?\]\s+-\s+.*?\s+-\s+loss:\s+([\d\.]+)(?:\s+-\s+val_loss:\s+([\d\.]+))?")
+
+    # Inicia el proceso de entrenamiento
+
+    process = subprocess.Popen(['python', 'entrenamiento.py', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
+
+    while True:
+        output = process.stdout.readline()
+        print("Debug: Output del proceso", output)
+        if output == '' and process.poll() is not None:
+            break
+        if "Model training completed and saved." in output:
+            socketio.emit('training_complete', {'file': filename +".h5"}, namespace='/entrenamiento')
+            print("Enviando al front - Entrenamiento completado")
+        if output:
+            epoch_match = epoch_pattern.search(output)
+            batch_match = batch_pattern.search(output)
+            if epoch_match:
+                epoch_data = {'current_epoch': epoch_match.group(1), 'total_epochs': epoch_match.group(2)}
+                socketio.emit('update_epoch', epoch_data, namespace='/entrenamiento')
+            elif batch_match:
+                batch_data = {'current_batch': batch_match.group(1), 'total_batches': batch_match.group(2), 'loss': batch_match.group(3)}
+                socketio.emit('update_batch', batch_data, namespace='/entrenamiento')
+
+    process.stdout.close()
+    process.stderr.close()
+    process.wait()
 
 
+@app.route('/download/<filename>')
+def download_file(filename):
+    # Asegúrate de validar o sanitizar el nombre del archivo para seguridad
+    directory = os.path.join(os.getcwd(), 'weights')
+    return send_from_directory(directory, filename, as_attachment=True)
 
 @app.route('/entrenamiento', methods=['GET', 'POST'])
 def entrenamiento():
-        print("hola entrenamiento")
-        return render_template('entrenamiento.html')
+    if request.method == 'POST':
+        filename = request.form['Name']  
+        training_thread = Thread(target=start_training_thread, args=(filename,))
+        training_thread.start()
+    return render_template('entrenamiento.html')
 
+@socketio.on('connect', namespace='/entrenamiento')
+def test_connect():
+    print("Cliente conectado.")
+    send({'data': 'Connected'}, namespace='/entrenamiento', json=True)  # Use `send` with json=True
 
-
-
-
-
+@app.route('/test')
+def test():
+    socketio.send({'message': 'Hello, this is a test!'}, namespace='/entrenamiento', json=True)  # Use `send` with json=True
+    return "Message sent!"
 
 if __name__ == '__main__':
-    app.run(debug=True, threaded=False)
-
-
-
-    
+    socketio.run(app, debug=True)    
