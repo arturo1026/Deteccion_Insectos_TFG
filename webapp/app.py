@@ -25,7 +25,7 @@ from keras.callbacks import Callback
 from os import listdir
 import threading
 from entrenamiento import train_model
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from threading import Thread
 import subprocess
 import logging
@@ -48,10 +48,14 @@ process_status = {}
 
 
 
+
 app = Flask(__name__)
+app.config['MODEL_UPLOAD_FOLDER'] = 'weights' 
 socketio = SocketIO(app, cors_allowed_origins="*")
-app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.secret_key = 'una_clave_secreta_very_secret'
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'h5'}
 
 
 def create_or_get_session_id():
@@ -98,13 +102,10 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "weights")
 
 # Iniciamos el modelo con la configuracion previa 
 
-model = MaskRCNN(mode='inference', model_dir='logs', config=cfg, optimizer='SGD')
 
 
-model.load_weights('logs/mask_rcnn_insects_cfg_24_04_2024.h5', by_name=True)
-
-
-
+model = MaskRCNN(mode='inference', model_dir='weights', config=cfg, optimizer='SGD')
+#model.load_weights('weights/mask_rcnn_insects_cfg_24_04_2024.h5', by_name=True)
 # Ruta a la página principal
 @app.route('/')
 def index():
@@ -130,7 +131,6 @@ def count_class_ids(class_ids):
     return [class_id_counter_WF, class_id_counter_NC, class_id_counter_MR, class_id_counter_TOTAL]
 
 
-
 @app.route('/deteccion', methods=['GET', 'POST'])
 def deteccion():
     pngImageB64String = ''
@@ -140,31 +140,45 @@ def deteccion():
         try:
             session_id = create_or_get_session_id()
             print("Solicitud recibida")
-            file = request.files['fileInput']
+            file = request.files.get('fileInput')
+            
             if not file or file.filename == '':
                 print("No se seleccionó ningún archivo")
                 return 'No se seleccionó ningún archivo', 400
 
-            print("cargando")
-            update_status(session_id, 'Cargando imagen...', 20)
+            modeloCargadoUsuario = request.files.get('modelInput')
+            pesos = request.form.get('model-option')
+            
+            if modeloCargadoUsuario and allowed_file(modeloCargadoUsuario.filename):
+                filename = secure_filename(modeloCargadoUsuario.filename)
+                model_path = os.path.join(app.config['MODEL_UPLOAD_FOLDER'], filename)
+                modeloCargadoUsuario.save(model_path)
+                print(f"Modelo guardado en {model_path}")
+
+                if pesos == "custom":
+                    print("Cargando modelo personalizado")
+                    model.load_weights(model_path, by_name=True)
+            elif pesos == "default":
+                print("Cargando modelo por defecto")
+                model.load_weights('weights/mask_rcnn_insects_cfg_24_04_2024.h5', by_name=True)
+            else:
+                return "Opción de modelo no válida o archivo faltante", 400
+
+            print("cargando imagen...")
             insect_img = skimage.io.imread(file.stream)
 
-            print("detectando")
-            update_status(session_id, 'Realizando detección...', 50)
+            print("detectando...")
             detected = model.detect([insect_img])[0]
 
-            print("graficando")
-            update_status(session_id, 'Graficando resultados...', 80)
+            print("graficando resultados...")
             fig, ax = pyplot.subplots()
-            display_instances(insect_img, detected['rois'], detected['masks'], detected['class_ids'],
-                              ['BG', 'WF', 'NC', 'MR'], detected['scores'], ax=ax)
+            display_instances(insect_img, detected['rois'], detected['masks'], detected['class_ids'], ['BG', 'WF', 'NC', 'MR'], detected['scores'], ax=ax)
 
             pngImage = BytesIO()
             FigureCanvas(fig).print_png(pngImage)
             pyplot.close(fig)
 
-            print("codificando")
-            update_status(session_id, 'Codificando...', 90)
+            print("codificando...")
             pngImageB64String = "data:image/png;base64," + base64.b64encode(pngImage.getvalue()).decode('utf8')
 
             conteos = count_class_ids(detected['class_ids'])
@@ -178,18 +192,33 @@ def deteccion():
     return render_template('deteccion.html', image_data=pngImageB64String, conteos=conteos)
 
 
+
 #####################################################################################################################
 
-def start_training_thread(filename):
+def start_training_thread(filename,algorithm,epoch,steps,proporcionEntrenamiento,proporcionTest,Resnet,validacion,):
     # Define el patrón de las expresiones regulares para capturar las líneas relevantes
     epoch_pattern = re.compile(r"Epoch (\d+)/(\d+)")
     batch_pattern = re.compile(r"(\d+)/(\d+)\s+\[.*?\]\s+-\s+.*?\s+-\s+loss:\s+([\d\.]+)(?:\s+-\s+val_loss:\s+([\d\.]+))?")
 
     # Inicia el proceso de entrenamiento
 
-    process = subprocess.Popen(['python', 'entrenamiento.py', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
+    data = {
+        'filename': filename,
+        'algorithm': algorithm,
+        'epoch': epoch,
+        'steps': steps,
+        'proporcionEntrenamiento': proporcionEntrenamiento,
+        'proporcionTest': proporcionTest,
+        'Resnet': Resnet,
+        'validacion': validacion
+    }
+    send_data_to_frontend(data)
+
+    
+    process = subprocess.Popen(['python', 'entrenamiento.py', filename,algorithm,epoch,steps,proporcionEntrenamiento,proporcionTest,Resnet,validacion], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
 
     while True:
+        send_data_to_frontend(data)
         output = process.stdout.readline()
         print("Debug: Output del proceso", output)
         if output == '' and process.poll() is not None:
@@ -218,13 +247,47 @@ def download_file(filename):
     directory = os.path.join(os.getcwd(), 'weights')
     return send_from_directory(directory, filename, as_attachment=True)
 
+
+def send_data_to_frontend(data):
+    socketio.emit('update_data', data, namespace='/entrenamiento')
+
 @app.route('/entrenamiento', methods=['GET', 'POST'])
 def entrenamiento():
     if request.method == 'POST':
-        filename = request.form['Name']  
-        training_thread = Thread(target=start_training_thread, args=(filename,))
+        filename = request.form['Name']
+        algorithm = request.form['algoritmo']
+        epoch = request.form['epoch']
+        steps = request.form['steps']
+        proporcionEntrenamiento = (request.form['proporcionesValue'])
+        proporcionTest = (request.form['testValue'])
+        Resnet = (request.form['modelo_resnet'])
+        validacion = request.form['validacion']
+
+        data = {
+            'filename': filename,
+            'algorithm': algorithm,
+            'epoch': epoch,
+            'steps': steps,
+            'proporcionEntrenamiento': proporcionEntrenamiento,
+            'proporcionTest': proporcionTest,
+            'Resnet': Resnet,
+            'validacion': validacion
+        }
+        send_data_to_frontend(data)
+
+        
+        print("Filename:", filename)
+        print("Algorithm:", algorithm)
+        print("Training Proportion:", proporcionEntrenamiento)
+        print("Test Proportion:", proporcionTest)
+        print("el modelo del resnet llegado al backend es" ,Resnet )
+        print("la validacion que llega es" , validacion)
+        
+        training_thread = Thread(target=start_training_thread, args=(filename,algorithm,epoch,steps,proporcionEntrenamiento,proporcionTest,Resnet,validacion,))
         training_thread.start()
     return render_template('entrenamiento.html')
+
+
 
 @socketio.on('connect', namespace='/entrenamiento')
 def test_connect():
@@ -236,5 +299,12 @@ def test():
     socketio.send({'message': 'Hello, this is a test!'}, namespace='/entrenamiento', json=True)  # Use `send` with json=True
     return "Message sent!"
 
+@app.route('/info')
+def info():
+    """
+    Ruta para mostrar la página de información.
+    """
+    return render_template('info.html')
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True)    
+    socketio.run(app, debug=True, use_reloader=False)    

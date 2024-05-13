@@ -212,9 +212,7 @@
     font-size: 4rem; /* Aumenta el tamaño para más impacto */
     color: #6C63FF; /* Un color que hace juego con el esquema de color del encabezado */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Sombra de texto para mejorar contraste */
-    text-align: center; /* Centra el texto horizontalmente */
-    margin-top: 1rem; /* Espacio superior */
-    margin-bottom: 2rem; /* Más espacio debajo del título para separarlo del contenido */
+     margin: 0;
     font-weight: 700; /* Hace el texto más audaz */
     line-height: 1.2; /* Ajusta el interlineado para un mejor aspecto visual */
     letter-spacing: -1px; /* Ajusta el espaciado entre caracteres para una mejor legibilidad */
@@ -454,6 +452,13 @@ button[type=submit]:active {
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1), 0 6px 8px rgba(0, 0, 0, 0.15);
 }
 
+.titulo-html {
+    display: flex;
+    align-items: center; /* Asegura que la imagen y el título estén alineados verticalmente */
+    gap: 10px; /* Añade un espacio entre la imagen y el título */
+}
+
+
 .upload-area label {
     width: 100%;
     height: 100%;
@@ -564,9 +569,81 @@ div.model-name-container > .close-btn {
     color: #d33; /* Darken the color on hover for effect */
 }
 
-.hidden {
-    display: none;
+.training-container {
+    display: flex;
+    justify-content: space-between; /* Esto alinea los elementos a ambos extremos del contenedor */
+    align-items: flex-start; /* Alinea los elementos al inicio de su contenedor en dirección vertical */
+    padding: 20px; /* Espacio alrededor del contenido */
 }
+
+.training-status, .training-data {
+    flex: 1; /* Esto hace que ambos divs ocupen el mismo espacio */
+    margin: 10px; /* Añade un poco de margen entre los bloques */
+}
+
+.hidden {
+    display: none; /* Esto asegura que los elementos con clase 'hidden' no se muestren */
+}
+
+
+img.imagen-icono-info {
+    width: 35px;
+    height: 35px;
+    cursor: pointer; 
+}
+
+/* Enhanced detection layout styles for aesthetic consistency */
+.detection-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #fff; /* Matching white background for content clarity */
+    border-radius: 8px; /* Softened corners for a modern look */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    margin-bottom: 20px; /* Space below the detection layout */
+}
+
+.detection-results {
+    flex: 1; /* Allocates half of the space */
+    margin-right: 20px; /* Space between the result and counts */
+}
+
+.detection-counts {
+    flex: 1; /* Allocates half of the space */
+    background-color: #f8f8f8; /* Slightly off-white background for distinction */
+    padding: 15px; /* Padding for internal spacing */
+    border-radius: 5px; /* Consistent rounded corners */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); /* Inset shadow for subtle depth */
+}
+
+.detection-image {
+    width: 100%; /* Ensures the image is responsive */
+    height: auto; /* Maintains the aspect ratio */
+    border-radius: 5px; /* Rounded corners for the image */
+}
+
+/* Styling text and list in detection counts for better readability */
+.detection-counts h3 {
+    color: #333; /* Dark grey for better readability */
+    margin-bottom: 10px; /* Space below the header */
+}
+
+.detection-counts ul {
+    list-style-type: none; /* Removes default list styling */
+    padding: 0; /* Removes default padding */
+    margin: 0; /* Removes default margin */
+}
+
+.detection-counts li {
+    background-color: #e6e6e6; /* Light grey background for list items */
+    padding: 8px 12px; /* Padding for list items */
+    margin-bottom: 6px; /* Space between list items */
+    border-radius: 4px; /* Rounded corners for list items */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+    font-size: 16px; /* Slightly larger font size for readability */
+}
+
 
 
 <script>

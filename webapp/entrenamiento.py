@@ -30,14 +30,20 @@ print("ha llegado a la config")
 tf.config.set_visible_devices([], 'GPU')
 
 
+
 class InsectsConfig(Config):
     NAME = "insects_cfg"
     NUM_CLASSES = 1 + 3  # background + 3 insect types
-    STEPS_PER_EPOCH = 5
+    
+    def __init__(self, steps_per_epoch,Resnet,validacion):
+        super().__init__()
+        self.STEPS_PER_EPOCH = steps_per_epoch
+        self.BACKBONE = Resnet
+        self.VALIDATION_STEPS = validacion
 
 class InsectsDataset(Dataset):
 
-    def load_dataset(self, dataset_dir, is_train=True):
+    def load_dataset(self, dataset_dir, is_train=True, train_split=0.7):
         # definimos 3 clases de insectos ya que tendremos 3 insectos ha detectar
         self.add_class("dataset", 1, "WF")
         self.add_class("dataset", 2, "NC")
@@ -47,24 +53,25 @@ class InsectsDataset(Dataset):
         images_dir = dataset_dir + '/images/'
         annotations_dir = dataset_dir + '/annots/'
        
-             
-		# find all images
-        for filename in listdir(images_dir):
+        all_images = sorted(listdir(images_dir))
+        split_index = int(len(all_images) * train_split)
+        print("el split del dataset es ",split_index)
+        # find all images
+        for i, filename in enumerate(all_images):
             print(filename)
 			# extract image id
             image_id = filename[:-4]
-			#print('IMAGE ID: ',image_id)
-			
-			# skip all images after 196 if we are building the train set
-            if is_train and int(image_id) >= 196: # 70%
-                continue
-			# skip all images before 196 if we are building the val set
-            if not is_train and int(image_id) < 196: # 30%
-                continue
-            img_path = images_dir + filename
-            ann_path = annotations_dir + image_id + '.xml'
-			# add to dataset
-            self.add_image('dataset', image_id=image_id, path=img_path, annotation=ann_path, class_ids = [0,1,2,3])
+            
+
+        for i, filename in enumerate(all_images):
+            image_id = filename[:-4]
+            img_path = os.path.join(images_dir, filename)
+            ann_path = os.path.join(annotations_dir, image_id + '.xml')
+            
+            if is_train and i < split_index:
+                self.add_image('dataset', image_id=image_id, path=img_path, annotation=ann_path)
+            elif not is_train and i >= split_index:
+                self.add_image('dataset', image_id=image_id, path=img_path, annotation=ann_path)
 
 
 	# extrae los bordes de las cajas delimitadoras 
@@ -147,9 +154,24 @@ def train_model():
     print("Ha entrado al script")
     # Configura el entorno y el modelo
     filename = sys.argv[1] 
-    print("el archivo",filename)
-    config = InsectsConfig()
-    model = MaskRCNN(mode='training', model_dir="logs", config=config, optimizer="SGD")
+    algorithm = sys.argv[2]
+    epoch = int(sys.argv[3]) 
+    steps = int(sys.argv[4]) 
+    train_split = float(sys.argv[5])/100
+    proporcionTest = int(sys.argv[6])
+    ResNet = sys.argv[7]
+    validacion = int(sys.argv[8])
+   
+    print("el numero de steps en el script" ,steps)
+    print("el archivo", filename)
+    print("el algoritmo", algorithm)
+    print("epochs:", epoch)  
+    print("entrenamiento",train_split )
+    print("test",proporcionTest )
+    print("El resNet es" , ResNet)
+    print("La validacion es" , validacion)
+    config = InsectsConfig(steps,ResNet,validacion)
+    model = MaskRCNN(mode='training', model_dir="logs", config=config, optimizer=algorithm)
     
     # Carga los pesos iniciales, excluyendo las últimas capas para personalización
     model.load_weights("weights/mask_rcnn_coco.h5", by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"])
@@ -157,15 +179,15 @@ def train_model():
     # Preparar datasets
     dataset_dir = 'datasets/renamed_to_numbers'  # Ajusta esta ruta según donde tengas tus datos
     train_set = InsectsDataset()
-    train_set.load_dataset(dataset_dir, is_train=True)
+    train_set.load_dataset(dataset_dir, is_train=True, train_split=train_split)
     train_set.prepare()
 
     test_set = InsectsDataset()
-    test_set.load_dataset(dataset_dir, is_train=False)
+    test_set.load_dataset(dataset_dir, is_train=False, train_split=train_split)
     test_set.prepare()
 
     # Entrena el modelo
-    model.train(train_set, test_set, learning_rate=config.LEARNING_RATE, epochs=1, layers='heads')
+    model.train(train_set, test_set, learning_rate=config.LEARNING_RATE, epochs=epoch, layers='heads')
     
     model_path = './weights/' + filename + '.h5'
     model.keras_model.save_weights(model_path)

@@ -27,12 +27,15 @@
     </div>
     <br>
     <button type="submit">Enviar</button>
-    <div class="result-container" style="display: flex; align-items: center; justify-content: space-between;">
-        <div>
+    <div class="detection-layout">
+        <!-- Resultado de la detección -->
+        <div class="detection-results">
             <h2>Resultado de la detección</h2>
-            <img src="{{ image_data }}" alt="Resultado de la detección">
+            <img src="{{ image_data }}" alt="Resultado de la detección" class="detection-image hidden">
         </div>
-        <div>
+    
+        <!-- Conteos de Detección -->
+        <div class="detection-counts">
             <h3>Conteos de Detección:</h3>
             <ul>
                 <li>Withe Fly (WF): {{ conteos[0] }}</li>
@@ -46,6 +49,11 @@
 
 <script>
     // Prevent default drag behaviors
+    document.getElementById('detectionForm').onsubmit = function() {
+    var image = document.querySelector('.detection-image');
+    image.classList.remove('hidden'); // Remove the 'hidden' class to show the image
+    return true; // Continue the form submission
+};
     function dragOverHandler(ev) {
         ev.preventDefault(); // Prevent default drag and drop behavior of the browser
         ev.currentTarget.classList.add('dragover'); // Añadir la clase 'dragover'

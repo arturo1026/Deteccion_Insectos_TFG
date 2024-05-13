@@ -191,10 +191,13 @@ import os
 ROOT_DIR = os.path.abspath("./")
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
-###############
 
+
+
+###############
+optimizador = "RMSprop" #SGD , Adam , RMSprop
 # Iniciamos el modelo con la configuracion previa 
-model = MaskRCNN(mode='training', model_dir="logs", config=config ,optimizer="SGD")
+model = MaskRCNN(mode='training', model_dir="logs", config=config ,optimizer=optimizador)
 # cargamos los pesos.Por defecto partimos de unos iniciales y no de 0 
 #  COCO, que significa "Common Objects in Context" de Microsoft 
 model.load_weights("weights/mask_rcnn_coco.h5", by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc",  "mrcnn_bbox", "mrcnn_mask"])

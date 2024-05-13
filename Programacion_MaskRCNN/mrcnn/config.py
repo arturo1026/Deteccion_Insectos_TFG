@@ -209,6 +209,16 @@ class Config(object):
 
     # Gradient norm clipping
     GRADIENT_CLIP_NORM = 5.0
+    
+    
+    #PARA ADAM
+    BETA_1 = 0.9  # typical value for Adam
+    BETA_2 = 0.999  # typical value for Adam
+    EPSILON = 1e-8
+    
+    
+    #Para rmsProp
+    DECAY = 0.9
 
     def __init__(self):
         """Set values of computed attributes."""
