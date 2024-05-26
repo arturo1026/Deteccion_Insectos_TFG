@@ -22,13 +22,39 @@ import keras.backend as K
 import keras.layers as KL
 import keras.engine as KE
 import keras.models as KM
-
+import matplotlib.pyplot as plt
 from mrcnn import utils
-
+import subprocess
 # Requires TensorFlow 1.3+ and Keras 2.0.8+.
 from distutils.version import LooseVersion
 assert LooseVersion(tf.__version__) >= LooseVersion("1.3")
 assert LooseVersion(keras.__version__) >= LooseVersion('2.0.8')
+
+
+global_losses = {
+    "batch_losses": [],
+    "epoch_losses": [],
+    "val_losses": []
+}
+
+
+
+
+class LossHistory(keras.callbacks.Callback):
+    def on_train_begin(self, logs=None):
+        self.losses_per_step = []  # Para registrar los losses de cada step
+        self.val_losses_per_epoch = []  # Para registrar los val_losses de cada epoch
+
+    def on_batch_end(self, batch, logs=None):
+        self.losses_per_step.append(logs.get('loss'))
+
+    def on_epoch_end(self, epoch, logs=None):
+        self.val_losses_per_epoch.append(logs.get('val_loss'))
+        # Ejecuta el script prueba.py al final de cada epoch
+        result = subprocess.run(['python', 'reeordenar.py'], capture_output=True, text=True)
+        print(f"Output of prueba.py: {result.stdout}")
+        if result.stderr:
+            print(f"Error in prueba.py: {result.stderr}")
 
 
 ############################################################
@@ -2285,56 +2311,23 @@ class MaskRCNN():
         self.checkpoint_path = self.checkpoint_path.replace(
             "*epoch*", "{epoch:04d}")
 
+
+    
     def train(self, train_dataset, val_dataset, learning_rate, epochs, layers,
               augmentation=None, custom_callbacks=None, no_augmentation_sources=None):
-        """Train the model.
-        train_dataset, val_dataset: Training and validation Dataset objects.
-        learning_rate: The learning rate to train with
-        epochs: Number of training epochs. Note that previous training epochs
-                are considered to be done alreay, so this actually determines
-                the epochs to train in total rather than in this particaular
-                call.
-        layers: Allows selecting wich layers to train. It can be:
-            - A regular expression to match layer names to train
-            - One of these predefined values:
-              heads: The RPN, classifier and mask heads of the network
-              all: All the layers
-              3+: Train Resnet stage 3 and up
-              4+: Train Resnet stage 4 and up
-              5+: Train Resnet stage 5 and up
-        augmentation: Optional. An imgaug (https://github.com/aleju/imgaug)
-            augmentation. For example, passing imgaug.augmenters.Fliplr(0.5)
-            flips images right/left 50% of the time. You can pass complex
-            augmentations as well. This augmentation applies 50% of the
-            time, and when it does it flips images right/left half the time
-            and adds a Gaussian blur with a random sigma in range 0 to 5.
-
-                augmentation = imgaug.augmenters.Sometimes(0.5, [
-                    imgaug.augmenters.Fliplr(0.5),
-                    imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
-                ])
-	    custom_callbacks: Optional. Add custom callbacks to be called
-	        with the keras fit_generator method. Must be list of type keras.callbacks.
-        no_augmentation_sources: Optional. List of sources to exclude for
-            augmentation. A source is string that identifies a dataset and is
-            defined in the Dataset class.
-        """
         assert self.mode == "training", "Create model in training mode."
-
+    
         # Pre-defined layer regular expressions
         layer_regex = {
-            # all layers but the backbone
             "heads": r"(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
-            # From a specific Resnet stage and up
             "3+": r"(res3.*)|(bn3.*)|(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
             "4+": r"(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
             "5+": r"(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
-            # All layers
             "all": ".*",
         }
         if layers in layer_regex.keys():
             layers = layer_regex[layers]
-
+    
         # Data generators
         train_generator = data_generator(train_dataset, self.config, shuffle=True,
                                          augmentation=augmentation,
@@ -2342,37 +2335,39 @@ class MaskRCNN():
                                          no_augmentation_sources=no_augmentation_sources)
         val_generator = data_generator(val_dataset, self.config, shuffle=True,
                                        batch_size=self.config.BATCH_SIZE)
-
+    
         # Create log_dir if it does not exist
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
-
+    
         # Callbacks
+        history = LossHistory()
         callbacks = [
             keras.callbacks.TensorBoard(log_dir=self.log_dir,
                                         histogram_freq=0, write_graph=True, write_images=False),
             keras.callbacks.ModelCheckpoint(self.checkpoint_path,
                                             verbose=0, save_weights_only=True),
+            history  # Añadir el callback de historial aquí
         ]
-
+    
         # Add custom callbacks to the list
         if custom_callbacks:
             callbacks += custom_callbacks
-
+    
         # Train
         log("\nStarting at epoch {}. LR={}\n".format(self.epoch, learning_rate))
         log("Checkpoint Path: {}".format(self.checkpoint_path))
         self.set_trainable(layers)
         self.compile(learning_rate, self.config.LEARNING_MOMENTUM)
-
+    
         # Work-around for Windows: Keras fails on Windows when using
         # multiprocessing workers. See discussion here:
         # https://github.com/matterport/Mask_RCNN/issues/13#issuecomment-353124009
-        if os.name is 'nt':
+        if os.name == 'nt':
             workers = 0
         else:
             workers = multiprocessing.cpu_count()
-
+    
         self.keras_model.fit_generator(
             train_generator,
             initial_epoch=self.epoch,
@@ -2386,6 +2381,35 @@ class MaskRCNN():
             use_multiprocessing=True,
         )
         self.epoch = max(self.epoch, epochs)
+    
+        self.losses_per_step = history.losses_per_step
+        self.val_losses_per_epoch = history.val_losses_per_epoch
+        
+    
+    
+    def plot_losses(self):
+        plt.figure(figsize=(10, 5))
+        
+        # Graficar las pérdidas por step
+        plt.subplot(1, 2, 1)
+        plt.plot(self.losses_per_step, label='Training Loss per Step')
+        plt.title('Training Loss per Step')
+        plt.xlabel('Step')
+        plt.ylabel('Loss')
+        plt.legend(loc='upper right')
+        plt.grid(True)
+    
+        # Graficar las pérdidas por epoch
+        plt.subplot(1, 2, 2)
+        plt.plot(self.val_losses_per_epoch, label='Validation Loss per Epoch')
+        plt.title('Validation Loss per Epoch')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend(loc='upper right')
+        plt.grid(True)
+    
+        plt.tight_layout()
+        plt.show()
 
     def mold_inputs(self, images):
         """Takes a list of images and modifies them to the format expected
