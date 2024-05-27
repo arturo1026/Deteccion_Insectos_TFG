@@ -73,7 +73,7 @@ Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda co
 
 ## Uso
 
-    Para utilizar la aplicación, ejecuta el siguiente comando desde el directorio webapp:
+    ```Para utilizar la aplicación, ejecuta el siguiente comando desde el directorio webapp:
     ```sh
     python app.py
 
