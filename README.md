@@ -74,3 +74,46 @@ Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda co
 Para utilizar la aplicación, ejecuta el siguiente comando:
 ```sh
 python main.py
+
+## Estructura del Proyecto
+
+- `Programacion_MaskRCNN/`: Contiene los scripts de entrenamiento y evaluación del modelo.
+- `webapp/`: Contiene el código fuente de la aplicación web.
+- `instalacion/`: Contiene los scripts de instalación y configuración.
+- `LICENSE`: Licencia del proyecto.
+- `README.md`: Archivo con información del proyecto.
+- `anexos.pdf` y `memoria.pdf`: Documentación del proyecto.
+
+## Contribución
+
+Las contribuciones son bienvenidas. Para contribuir, por favor sigue los siguientes pasos:
+
+1. Haz un fork del proyecto.
+2. Crea una nueva rama (`git checkout -b feature/nueva-caracteristica`).
+3. Realiza los cambios necesarios y haz commit (`git commit -am 'Añadir nueva característica'`).
+4. Envía tus cambios (`git push origin feature/nueva-caracteristica`).
+5. Crea un Pull Request.
+
+## Capturas de Pantalla
+
+![Detección de Insectos](img/captura.png)
+
+## Posibles Mejoras
+
+- **Optimización del Modelo**: Mejorar la precisión del modelo ajustando hiperparámetros y utilizando técnicas de aumento de datos.
+- **Interfaz de Usuario**: Desarrollar una interfaz de usuario más intuitiva y amigable.
+- **Soporte para Más Tipos de Insectos**: Ampliar el modelo para detectar y clasificar más tipos de insectos.
+- **Despliegue en la Nube**: Implementar el proyecto en una plataforma en la nube para facilitar el acceso y la escalabilidad.
+- **Documentación**: Ampliar y mejorar la documentación del proyecto, incluyendo tutoriales y guías paso a paso.
+
+## Licencia
+
+Este proyecto está licenciado bajo la Licencia MIT. Para más detalles, consulta el archivo [LICENSE](LICENSE).
+
+| Permissions | Limitations | Conditions |
+| --- | --- | --- |
+| ✔️ Commercial use | ❌ Liability | ℹ️ License and copyright notice |
+| ✔️ Modification | ❌ Warranty |  |
+| ✔️ Distribution |  |  |
+| ✔️ Private use |  |  |
+```
