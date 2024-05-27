@@ -1,6 +1,6 @@
 ## Instalación
 
-Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda con la versión de Python 3.7.11. Puedes optar por utilizar el script `install.bat` para una instalación automatizada en Windows o seguir los pasos de instalación manual. A continuación, se describen ambos métodos:
+Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda con la versión de Python 3.7.11. Puedes optar por utilizar el script `install.bat` para una instalación automatizada en Windows o seguir los pasos de instalación manual ambos utilizan archivos de instalación ubicados en el directorio de isntalación. A continuación, se describen ambos métodos:
 
 ### Método 1: Instalación Automatizada en Windows
 
