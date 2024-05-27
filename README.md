@@ -9,8 +9,10 @@ Este proyecto tiene como objetivo la identificación de tres tipos de insectos e
 - [Uso](#uso)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Contribución](#contribución)
-- [Licencia](#licencia)
 - [Capturas de Pantalla](#capturas-de-pantalla)
+- [Posibles Mejoras](#posibles-mejoras)
+- [Licencia](#licencia)
+
 
 ## Descripción
 
@@ -87,10 +89,6 @@ Las contribuciones son bienvenidas. Para contribuir, por favor sigue los siguien
 3. Realiza los cambios necesarios y haz commit (`git commit -am 'Añadir nueva característica'`).
 4. Envía tus cambios (`git push origin feature/nueva-caracteristica`).
 5. Crea un Pull Request.
-
-## Capturas de Pantalla
-
-![Detección de Insectos](img/captura.png)
 
 ## Posibles Mejoras
 
