@@ -71,6 +71,13 @@ Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda co
 
    Este paso instalará y configurará la biblioteca Mask R-CNN necesaria para el proyecto.
 
+## Uso
+
+Para utilizar la aplicación, ejecuta el siguiente comando desde la raíz del proyecto:
+
+```sh
+python app.py
+
 ## Estructura del Proyecto
 
 - `Programacion_MaskRCNN/`: Contiene los scripts de entrenamiento y evaluación del modelo.
