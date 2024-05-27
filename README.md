@@ -73,11 +73,11 @@ Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda co
 
 ## Uso
 
-Para utilizar la aplicación, ejecuta el siguiente comando desde la raíz del proyecto:
+    Para utilizar la aplicación, ejecuta el siguiente comando desde el directorio webapp:
+    ```sh
+    python app.py
 
-```sh
-python app.py
-
+    
 ## Estructura del Proyecto
 
 - `Programacion_MaskRCNN/`: Contiene los scripts de entrenamiento y evaluación del modelo.
