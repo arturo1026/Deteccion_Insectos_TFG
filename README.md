@@ -1,6 +1,24 @@
+# Detección de Insectos en Cultivos
+
+Este proyecto tiene como objetivo la identificación de tres tipos de insectos en cultivos utilizando inteligencia artificial. Estos insectos incluyen la mosca blanca, que es perjudicial para la plantación, así como Nesidiocoris y Macrolophus pygmaeus, ambas especies liberadas con el propósito de controlar la población de mosca blanca en el cultivo.
+
+## Tabla de Contenidos
+
+- [Descripción](#descripción)
+- [Instalación](#instalación)
+- [Uso](#uso)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Contribución](#contribución)
+- [Licencia](#licencia)
+- [Capturas de Pantalla](#capturas-de-pantalla)
+
+## Descripción
+
+El proyecto utiliza técnicas de aprendizaje profundo para detectar y clasificar insectos en imágenes de cultivos. La red neuronal empleada está basada en la metodología Mask R-CNN.
+
 ## Instalación
 
-Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda con la versión de Python 3.7.11. Puedes optar por utilizar el script `install.bat` para una instalación automatizada en Windows o seguir los pasos de instalación manual ambos utilizan archivos de instalación ubicados en el directorio de isntalación. A continuación, se describen ambos métodos:
+Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda con la versión de Python 3.7.11. Puedes optar por utilizar el script `install.bat` para una instalación automatizada en Windows o seguir los pasos de instalación manual. A continuación, se describen ambos métodos:
 
 ### Método 1: Instalación Automatizada en Windows
 
@@ -51,19 +69,8 @@ Para instalar el proyecto, se recomienda utilizar un entorno virtual de conda co
 
    Este paso instalará y configurará la biblioteca Mask R-CNN necesaria para el proyecto.
 
----
+## Uso
 
-
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-| Permissions | Limitations | Conditions |
-| --- | --- | --- |
-| ✔️ Commercial use | ❌ Liability | ℹ️ License and copyright notice |
-| ✔️ Modification | ❌ Warranty |  |
-| ✔️ Distribution |  |  |
-| ✔️ Private use |  |  |
-
-For more details, see the [LICENSE](LICENSE) file.
+Para utilizar la aplicación, ejecuta el siguiente comando:
+```sh
+python main.py
