@@ -4,7 +4,7 @@
 
 {% block content %}
 <h1 class="titulo-subir-archivos">Identifica cuántos y cuáles insectos hay</h1>
-<form action="/deteccion" method="POST" enctype="multipart/form-data" target="_self">
+<form id="detection-form" action="/deteccion" method="POST" enctype="multipart/form-data" target="_self">
     <div class="upload-area" ondragover="dragOverHandler(event);" ondrop="dropHandler(event);">
         <label for="fileInput">
             <span id="file-prompt" class="file-prompt">Arrastra un archivo aquí o selecciona subiendo un archivo.</span>
@@ -31,7 +31,7 @@
         <!-- Resultado de la detección -->
         <div class="detection-results">
             <h2>Resultado de la detección</h2>
-            <img src="{{ image_data }}" alt="Resultado de la detección" class="detection-image hidden">
+            <img id="detection-image" src="{{ image_data }}" alt="Resultado de la detección" class="detection-image">
         </div>
     
         <!-- Conteos de Detección -->
@@ -48,54 +48,32 @@
 </form>
 
 <script>
-    // Prevent default drag behaviors
-    document.getElementById('detectionForm').onsubmit = function() {
-    var image = document.querySelector('.detection-image');
-    image.classList.remove('hidden'); // Remove the 'hidden' class to show the image
-    return true; // Continue the form submission
-};
-    function dragOverHandler(ev) {
-        ev.preventDefault(); // Prevent default drag and drop behavior of the browser
-        ev.currentTarget.classList.add('dragover'); // Añadir la clase 'dragover'
-    }
+document.getElementById('detection-form').addEventListener('submit', function() {
+    document.getElementById('detection-image').classList.remove('hidden');
+});
 
-    function dragLeaveHandler(ev) {
-        ev.currentTarget.classList.remove('dragover'); // Quitar la clase 'dragover'
-    }
+function dragOverHandler(ev) {
+    ev.preventDefault(); // Prevent default drag and drop behavior of the browser
+    ev.currentTarget.classList.add('dragover'); // Añadir la clase 'dragover'
+}
 
-    // Toggle the model upload area based on selection
-    function toggleModelUploadArea(event) {
-        var selection = event.target.value;
-        var modelUploadAreas = document.querySelectorAll('.upload-area');
-        if (selection === 'custom') {
-            modelUploadAreas[1].style.display = 'flex'; // Mostrar el segundo .upload-area para modelos
-        } else {
-            modelUploadAreas[1].style.display = 'none'; // Ocultar el segundo .upload-area para modelos
-        }
-    }
+function dragLeaveHandler(ev) {
+    ev.currentTarget.classList.remove('dragover'); // Quitar la clase 'dragover'
+}
+
+function dropHandler(ev) {
+    ev.preventDefault();
+    ev.currentTarget.classList.remove('dragover'); // Remove 'dragover' class
     
-    function updateProgress() {
-        fetch('/get_status')
-        .then(response => response.json())
-        .then(data => {
-            console.log(data); // Verifica los datos recibidos
-            let progressBar = document.getElementById('progressBar');
-            let statusMessage = document.getElementById('statusMessage');
-            progressBar.style.width = data.progress + '%';
-            progressBar.setAttribute('aria-valuenow', data.progress);
-            statusMessage.innerText = data.status;
-            if (data.progress < 100) {
-                setTimeout(updateProgress, 1000); // Continúa haciendo polling si el progreso es menor a 100
-            }
-        }).catch(error => console.error('Error al actualizar el progreso:', error));
-    }
+    var input = ev.currentTarget.querySelector('input[type="file"]');
+    var files = ev.dataTransfer.files;
     
-    document.addEventListener('DOMContentLoaded', function() {
-        updateProgress(); // Inicia el polling al cargar el documento
-    });
+    if (files.length > 0) {
+        input.files = files;
+        fileInputChangeHandler(); // Actualiza la vista previa de la imagen
+    }
+}
 
-
-    // Handle file selection for images and model
 function fileInputChangeHandler() {
     var fileInput = document.getElementById('fileInput');
     var imagePreviewContainer = document.querySelector('.image-preview-container');
@@ -107,94 +85,51 @@ function fileInputChangeHandler() {
         reader.onload = function(e) {
             imagePreviewContainer.innerHTML = '';
 
-            // Botón de cierre 'X'
             var closeButton = document.createElement('button');
             closeButton.classList.add('close-btn');
             closeButton.innerHTML = '&times;';
             closeButton.onclick = function() {
                 imagePreviewContainer.innerHTML = '';
                 fileInput.value = '';
-                filePrompt.style.display = 'block'; // Vuelve a mostrar el mensaje inicial
+                filePrompt.style.display = 'block';
             };
-
-            // Posiciona el botón de cierre en la parte superior derecha de la imagen
             closeButton.style.position = 'absolute';
             closeButton.style.top = '0';
             closeButton.style.right = '0';
 
-            // Etiqueta 'Imagen seleccionada:'
             var selectedLabel = document.createElement('span');
             selectedLabel.textContent = 'Imagen seleccionada:';
-            selectedLabel.classList.add('file-prompt'); // Reutiliza el estilo de .file-prompt
+            selectedLabel.classList.add('file-prompt');
 
-            // Crear y mostrar la imagen
             var image = new Image();
             image.src = e.target.result;
             image.alt = 'Vista previa de la imagen cargada';
-            image.style.maxWidth = '200px'; // Establece un ancho máximo para la imagen
-            image.style.maxHeight = '100px'; // Establece una altura máxima para la imagen
+            image.style.maxWidth = '200px';
+            image.style.maxHeight = '100px';
             image.style.objectFit = 'contain';
-            
-            // Añade el texto y la imagen al contenedor
+
             imagePreviewContainer.appendChild(selectedLabel);
             imagePreviewContainer.appendChild(image);
-            imagePreviewContainer.appendChild(closeButton); // El botón de cierre se añade después para posicionarlo sobre la imagen
+            imagePreviewContainer.appendChild(closeButton);
 
-            filePrompt.style.display = 'none'; // Oculta el mensaje de arrastrar archivo
+            filePrompt.style.display = 'none';
         };
 
         reader.readAsDataURL(fileInput.files[0]);
     }
 }
 
-    // Event handler for dragging and dropping files
-    function dropHandler(ev) {
-        ev.preventDefault();
-        
-        var area = ev.currentTarget;
-        var input = area.querySelector('input[type="file"]');
-        var files = ev.dataTransfer.files;
-        
-        if (files.length > 0) {
-            var file = files[0];
-            input.files = files;
-            
-            // Call the change handler to update the image preview
-            fileInputChangeHandler({
-                target: input
-            });
-        }
-        
-        area.classList.remove('dragover'); // Remove 'dragover' class
-    }
+function toggleModelUploadArea(event) {
+    var selection = event.target.value;
+    var modelUploadArea = document.getElementById('model-upload-area');
+    modelUploadArea.style.display = (selection === 'custom') ? 'flex' : 'none';
+}
 
-    // Set up click and drag events
-    window.onload = function() {
-        var filePrompts = document.querySelectorAll('.file-prompt');
-        filePrompts.forEach(function(prompt) {
-            prompt.addEventListener('click', function(event) {
-                event.stopPropagation(); // Prevent event bubbling
-                var input = prompt.previousElementSibling; // Asume que el input está justo antes del prompt
-                input.click();
-            });
-        });
-
-        // Set up the drag and drop handlers
-        var uploadAreas = document.querySelectorAll('.upload-area');
-        uploadAreas.forEach(function(area) {
-            area.addEventListener('dragover', dragOverHandler);
-            area.addEventListener('dragleave', dragLeaveHandler);
-            area.addEventListener('drop', dropHandler);
-        });
-    };
-    
-// Esta función maneja el evento 'dragover' específicamente para el área de subida de modelos
 function modelDragOverHandler(ev) {
     ev.preventDefault();
     ev.currentTarget.classList.add('dragover');
 }
 
-// Esta función maneja el evento 'drop' específicamente para el área de subida de modelos
 function modelDropHandler(ev) {
     ev.preventDefault();
     ev.currentTarget.classList.remove('dragover');
@@ -203,8 +138,8 @@ function modelDropHandler(ev) {
     var files = ev.dataTransfer.files;
 
     if (files.length > 0) {
-        input.files = files; // Coloca el archivo en el input
-        modelFileInputChangeHandler(); // Llama a la función que maneja el cambio de archivo
+        input.files = files; 
+        modelFileInputChangeHandler(); 
     }
 }
 
@@ -215,9 +150,8 @@ function modelFileInputChangeHandler() {
 
     if (input.files && input.files[0]) {
         var file = input.files[0];
-        modelNameContainer.innerHTML = ''; // Limpia el contenido anterior
+        modelNameContainer.innerHTML = '';
 
-        // Crea el botón de cierre 'X' y lo coloca en la parte superior derecha
         var closeButton = document.createElement('span');
         closeButton.classList.add('close-btn');
         closeButton.innerHTML = '&times;';
@@ -225,47 +159,47 @@ function modelFileInputChangeHandler() {
         closeButton.style.top = '0';
         closeButton.style.right = '0';
         closeButton.onclick = function() {
-            input.value = ''; // Limpia el input
-            modelNameContainer.innerHTML = ''; // Limpia el contenedor
-            modelLabel.style.display = 'block'; // Muestra de nuevo el label original
+            input.value = '';
+            modelNameContainer.innerHTML = '';
+            modelLabel.style.display = 'block';
         };
 
-        // Agrega primero el botón de cierre para que aparezca a la derecha
         modelNameContainer.appendChild(closeButton);
 
-        // Crea y configura la etiqueta 'Modelo seleccionado:'
         var textSpan = document.createElement('span');
         textSpan.textContent = 'Modelo seleccionado: ';
         textSpan.classList.add('file-prompt');
         
-        // Crea y configura el nombre del archivo subrayado
         var fileNameSpan = document.createElement('span');
         fileNameSpan.textContent = file.name;
-        fileNameSpan.classList.add('file-name'); // Clase para aplicar el subrayado
+        fileNameSpan.classList.add('file-name');
 
-        // Añade el nombre del archivo después del botón de cierre
         modelNameContainer.appendChild(textSpan);
         modelNameContainer.appendChild(fileNameSpan);
 
-        // Oculta el label de subida
         modelLabel.style.display = 'none';
     }
 }
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializa el área de carga de modelos como oculta
-    var modelUploadArea = document.getElementById('model-upload-area');
-    modelUploadArea.style.display = 'none';
 
-    // Manejador para el cambio de opción en el select
-    document.getElementById('model-select').addEventListener('change', function(event) {
-        if (event.target.value === 'custom') {
-            modelUploadArea.style.display = 'flex'; // Cambia a 'flex' para mostrar el área
-        } else {
-            modelUploadArea.style.display = 'none'; // Oculta el área
-        }
+window.onload = function() {
+    var filePrompts = document.querySelectorAll('.file-prompt');
+    filePrompts.forEach(function(prompt) {
+        prompt.addEventListener('click', function(event) {
+            event.stopPropagation();
+            var input = prompt.previousElementSibling;
+            input.click();
+        });
     });
-});
 
+    var uploadAreas = document.querySelectorAll('.upload-area');
+    uploadAreas.forEach(function(area) {
+        area.addEventListener('dragover', dragOverHandler);
+        area.addEventListener('dragleave', dragLeaveHandler);
+        area.addEventListener('drop', dropHandler);
+    });
+
+    document.getElementById('model-upload-area').style.display = 'none';
+    document.getElementById('model-select').addEventListener('change', toggleModelUploadArea);
+};
 </script>
-
 {% endblock %}
