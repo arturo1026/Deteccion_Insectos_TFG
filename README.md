@@ -16,7 +16,10 @@ Este proyecto tiene como objetivo la identificación de tres tipos de insectos e
 
 ## Descripción
 
-El proyecto utiliza técnicas de aprendizaje profundo para detectar y clasificar insectos en imágenes de cultivos. La red neuronal empleada está basada en la metodología Mask R-CNN.Se programó con la version 3.7.11 de python es posible que si no se utilice con esta versión surgan incomptibilidades entre distintas librerías
+El proyecto utiliza técnicas de aprendizaje profundo para detectar y clasificar insectos en imágenes de cultivos. La red neuronal empleada está basada en la metodología Mask R-CNN.Se programó con la version 3.7.11 de python es posible que si no se utilice con esta versión surgan incomptibilidades entre distintas librerías.
+
+Los modelos preentrenados en el proyecto son de un tamaño muy grande y pueden corremperse durante la subida y descarga para ello se facilita un drive con su descarga en caso de presentarse problemas.
+[Enlace a los modelos en Google Drive](https://drive.google.com/drive/folders/1G8NQ3AoleelwGGKPwlqq_IFaKRPRiP7v)
 
 ## Instalación
 
