@@ -195,12 +195,14 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
 
 ###############
-optimizador = "RMSprop" #SGD , Adam , RMSprop
+optimizador = "Adam" #SGD , Adam , RMSprop
 # Iniciamos el modelo con la configuracion previa 
 model = MaskRCNN(mode='training', model_dir="logs", config=config ,optimizer=optimizador)
 # cargamos los pesos.Por defecto partimos de unos iniciales y no de 0 
 #  COCO, que significa "Common Objects in Context" de Microsoft 
 model.load_weights("weights/mask_rcnn_coco.h5", by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc",  "mrcnn_bbox", "mrcnn_mask"])
+
+
 
 
 # entrenamiento del  modelo
@@ -209,12 +211,23 @@ model.load_weights("weights/mask_rcnn_coco.h5", by_name=True, exclude=["mrcnn_cl
 # test_set corresponde con nuestro conjunto de datos definidos previamente
 model.train(train_set, test_set, learning_rate=config.LEARNING_RATE, epochs=20, layers='heads')
 # guardamos en el directorio logs los pesos del entrenamiento
-model_path = './logs/mask_rcnn_insects_cfg_24_04_2025.h5'
+model_path = './weights/mask_rcnn_insects_cfg_24_04_2025.h5'
 model.keras_model.save_weights(model_path)
+
+
+training_losses = model.losses_per_step
+validation_losses = model.val_losses_per_epoch
+
+# Imprimir pérdidas
+print("Training Losses per Step:", training_losses)
+print("Validation Losses per Epoch:", validation_losses)
+
+# Graficar las pérdidas
+model.plot_losses()
+
 #########################################
 
-###################################################
-# AQUI
+
 from matplotlib.patches import Rectangle # para dibujar los rectangulos delimitadores de los insectos detectados
 
 #Hereda de mrcnn config
@@ -239,7 +252,7 @@ import tensorflow as tf
 model = MaskRCNN(mode='inference', model_dir='logs', config=cfg, optimizer='SGD')
 
 
-model.load_weights('logs/mask_rcnn_insects_cfg_24_04_2024.h5', by_name=True)
+model.load_weights('weights/mask_rcnn_insects_cfg_24_04_2024.h5', by_name=True)
 
 
 import skimage
